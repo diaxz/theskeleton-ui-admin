@@ -5,15 +5,30 @@ before_script:
 - yarn
 script:
 - yarn run generate
+before_install:
+- docker login --email=$DOCKER_HUB_EMAIL --username=$DOCKER_HUB_USERNAME --password=$DOCKER_HUB_PASSWORD
+- docker build . -t theskeleton-ui-admin -e BUILD_DIR=${TRAVIS_BUILD_DIR}
+- docker ps -a
+- docker tag theskeleton-ui-admin:latest codenergic/theskeleton-ui-admin:latest
+- docker push codenergic/theskeleton-ui-admin:latest
 before_deploy:
-- openssl aes-256-cbc -K $encrypted_47773e7a01a0_key -iv $encrypted_47773e7a01a0_iv -in deploy_rsa.enc -out /tmp/deploy_rsa -d
+- openssl aes-256-cbc -K $encrypted_7a9eae7a59cb_key -iv $encrypted_7a9eae7a59cb_iv -in deploy_rsa.enc -out /tmp/deploy_rsa -d
 - eval "$(ssh-agent -s)"
 - chmod 600 /tmp/deploy_rsa
 - ssh-add /tmp/deploy_rsa
 deploy:
   provider: script
   skip_cleanup: true
-  script: rsync -a --delete-after --quiet $TRAVIS_BUILD_DIR/dist/ theskeleton@azure.ns.codenergic.org:/home/theskeleton/ui/admin/theskeleton-$TRAVIS_BUILD_ID ; ssh theskeleton@azure.ns.codenergic.org 'rm -rf /home/theskeleton/ui/admin/current/*' ; ssh theskeleton@azure.ns.codenergic.org 'cp -r /home/theskeleton/ui/admin/theskeleton-$TRAVIS_BUILD_ID/* /home/theskeleton/ui/admin/current/'
+  script: chmod 600 id_rsa && ssh docker@52.187.120.141 '/usr/local/bin/docker-compose
+    down && /usr/local/bin/docker-compose pull && /usr/local/bin/docker-compose up
+    -d'
+  on:
+    branch: master
 addons:
   ssh_known_hosts:
-  - azure.ns.codenergic.org
+  - 52.187.120.141
+env:
+  global:
+  - secure: q278LunIv0p7PSiQT0K1LdLO9f543ctm8Ev9G0ihfVPVPjfroTzukYwIU0f+Sc6bKfHiCFhWRZMYyuenkY32hM2tYm+pBaTUxhQLe8FwiqPl8ViK42CEs+FiNicqWXvFpvmusw63jKDRVatngaoEIY9tV7yMg5ZyTMa0SqrdKa4ZpIRjPeJ9aQcq64qFaaoFnnzUMoJMYCxzenU9ywsXzi73qbvK2vg/Ezlez2pjDRzjDdmvAjuzoCWt0JwvvM/8Vi6gP9IWNDcqWsJeyMPIggQ85u1R3DEKNhSnGh/RanqOJMSyZtW744yxbK97jQeWGME5XJv1Vu2ykAQwWIZxAe7LoyKm2M0j34tmmsk3YbxVRadE7Rc1Iuplo8z6f69ve6U2BzSH+Oph92XOqay0/7uoJ1pNPwVBhod54BPQauA5aKQuEXtb+sCickSml5YAEE8hSgdWmR0FiM7wY+7TEuOR/75ly/2XQCQodAas/sYFXgd+I7vqe1Ghle+FMsrn0CcuHm3H4GoASA+UotlzqH/r3OG3oHkK7MrSXZyyJWtbGqlY9O4/YwP62pOMnXQ2cw5naT4wyWHIHP4EgOrdr1WRcuzQ5WFDIQsysKeUM273e1rn2FUCuFtB1sBTczW5Tc2bzuxwDofr14N+a2j9jApJdUxTBzelw46VL9opaU8=
+  - secure: lyoezbC0zx4ddilrva3eQqrLiIlm8i01NrJHgqgvzkn3/ojbEXPpI5M9PPMIpAmm+riqegmMvrIlVxIYZHAU070jz9P18uwoWfAR5JbS6ux5L5QPa4BAlOXRqH36bLf3/yMIKjDG1IRXExuAJhpKCgFDQ1n/qUstCTdLFDf0Qb893tSgvc1LEHN61K6EtMyUC5x36vaSJ3wz0FSw9XSpcVzMTIkRmw2Lltkvqlpe8oRX5QkBCCWLRmmR7fSmQDsDMF5L+95vTcd1Vi/lJikRxhViDJxADTexUaN0leK8g3Ai/rl+ADcQ/0yptWp3NaGOC6AXcdJH/JgIKcCW/xe6FdSezmkCXt+KYUV3fkqJQ/i0S8m4XoD3OJqazK0YifqQdkfj7ySIMvR0GsCIoRrJfLXMV5SvT/mjeZtSDoTCOktvAzUV3FApKlZM3+xalxT/jOKGFuNe2i91FifzQvd39GPdiAWHSZotsbSN+tAic4gqUDuxwPpID2Vngx8i6s5diBUQK2A6w2lis57/4jc9kZQHCS0XNK1Ykf3tFeiDl2FcIs6p/uSWpDi4njVZdA4bVi9JbcNi+bZimM9EkoQZr//yY0UJlB/0N1AqnEn0sguVa8BTEAKNOPX78Fry3ZW5Ci/ogP+94+T3rk/rDTQTE+0YC//mWlN1z6iVQ75SaSA=
+  - secure: dXGumMflRpifluyRj5vXZjLwcHrcGwqePsXWuc4R4jz3443YQZxhWjHMA9DMb3w2HU6u8e0dLgOO5QPktugZfJzqNX/M4Gglegno07+Rc41GNotYFEtDqnBxZciI8dlPOn2sjRSH4/XqVAl78p2w/Yz++bMMu9Sccg+7xqPPvZhJ8zGZmBKjI60W0+moE2X4Ce2jnSlMio4BiC29HAIUxx8lOatNWNctJAgt8kHMJ/uvEQwAIlmu9bzJEziNbYuzHsgSI7sEyrXEWAlB1or0mgXE2vFqm+9d1CFFeNd9OY6XhvaWg2elzD7ai24SrefXU/DbSFhGQGoM6z4V+iSkefOfhdum9jif9jWtL5+lHB6qhiNMH3nfh7QH6z91U85Cxm1X512FCJ9OwGRWyvumNiki2cnr13i66BiTyRjR4qEsQY6ziY+gcHShglBU3lPC+A2xOABvTgUeaGqVRYnqC3Rxe80owo39E+4j9MElFO8JuZuQefvVFIEaj3Fg0OoaVhm7QlNEjbPSGwopTU2Nl9q6uH9561FrGWAQ9+9bmXltpclKlIeUQIO8ntPPgPi2E5gdRFxMdObUwNwIzVDQqJPN8KuMV+PFxTTfYiidnt7b8kpdSZBHonZcqwZbYIk9z7do7lHsjY0uhcwRoIeA8fLqRCa4o49s2c47Tgg+Bck=
