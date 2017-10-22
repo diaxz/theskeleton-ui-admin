@@ -6,7 +6,7 @@ before_script:
 - docker login --email=$DOCKER_HUB_EMAIL --username=$DOCKER_HUB_USERNAME --password=$DOCKER_HUB_PASSWORD
 script:
 - yarn run generate
-- cd $TRAVIS_BUILD_DIR && pwd && docker build . -t theskeleton-ui-admin --build-arg BUILD_DIR=$TRAVIS_BUILD_DIR
+- cd $TRAVIS_BUILD_DIR && pwd && docker build . -t theskeleton-ui-admin
 - docker tag theskeleton-ui-admin:latest codenergic/theskeleton-ui-admin:latest
 - docker push codenergic/theskeleton-ui-admin:latest
 before_deploy:
